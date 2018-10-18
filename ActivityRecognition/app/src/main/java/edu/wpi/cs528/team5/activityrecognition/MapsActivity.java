@@ -114,6 +114,7 @@ public class MapsActivity
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 //        setTextView(R.id.fuller, 0);
 //        setTextView(R.id.gordon, 0);
+        startService(new Intent(this, StepCounterService.class));
     }
 
     @Override
