@@ -9,6 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.location.Geofence;
@@ -28,6 +29,8 @@ public class MapsActivity
         extends AppCompatActivity
         implements
         OnMapReadyCallback {
+
+    private static final String IDENTIFIER = "MapsActivity";
 
     private GoogleMap mMap;
     private MapView mMapView;
@@ -107,14 +110,14 @@ public class MapsActivity
         mMap = googleMap;
 
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        LatLng fullerLab = new LatLng(42.275078, -71.806574);
+        mMap.addMarker(new MarkerOptions().position(fullerLab).title("Marker in Sydney"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(fullerLab, 18.0f));
 
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                //addLocationAlert(latLng.latitude, latLng.longitude);
+                addLocationAlert(latLng.latitude, latLng.longitude);
             }
         });
     }
@@ -161,37 +164,38 @@ public class MapsActivity
     }
 
     private void addLocationAlert(double lat, double lng) {
-            String key = "" + lat + "-" + lng;
-            Geofence geofence = getGeofence(lat, lng, key);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return;
-            }
-            geofencingClient.addGeofences(getGeofencingRequest(geofence),
-                    getGeofencePendingIntent())
-                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            if (task.isSuccessful()) {
-                                Toast.makeText(MapsActivity.this,
-                                        "Location alter has been added",
-                                        Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(MapsActivity.this,
-                                        "Location alter could not be added",
-                                        Toast.LENGTH_SHORT).show();
-                            }
+        String key = "" + lat + "-" + lng;
+        Geofence geofence = getGeofence(lat, lng, key);
+        Log.i(IDENTIFIER, geofence.getRequestId());
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        geofencingClient.addGeofences(getGeofencingRequest(geofence),
+                getGeofencePendingIntent())
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(MapsActivity.this,
+                                    "Location alter has been added",
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MapsActivity.this,
+                                    "Location alter could not be added",
+                                    Toast.LENGTH_SHORT).show();
                         }
-                    });
+                    }
+                });
     }
 
-    private void removeLocationAlert(){
+    private void removeLocationAlert() {
         if (isLocationAccessPermitted()) {
             requestLocationAccessPermission();
         } else {
@@ -203,7 +207,7 @@ public class MapsActivity
                                 Toast.makeText(MapsActivity.this,
                                         "Location alters have been removed",
                                         Toast.LENGTH_SHORT).show();
-                            }else{
+                            } else {
                                 Toast.makeText(MapsActivity.this,
                                         "Location alters could not be removed",
                                         Toast.LENGTH_SHORT).show();
