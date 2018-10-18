@@ -1,23 +1,44 @@
 package edu.wpi.cs528.team5.activityrecognition;
 
-import android.support.v4.app.FragmentActivity;
+import android.Manifest;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
 
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingClient;
+import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 public class MapsActivity
         extends AppCompatActivity
-        implements OnMapReadyCallback {
+        implements
+        OnMapReadyCallback {
 
     private GoogleMap mMap;
     private MapView mMapView;
+
+    private static final int LOC_PERM_REQ_CODE = 1;
+    //meters
+    private static final int GEOFENCE_RADIUS = 500;
+    //in milli seconds
+    private static final int GEOFENCE_EXPIRATION = 6000;
+
+    private GeofencingClient geofencingClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +47,8 @@ public class MapsActivity
         mMapView = findViewById(R.id.map);
         mMapView.getMapAsync(this);
         mMapView.onCreate(savedInstanceState);
+
+        geofencingClient = LocationServices.getGeofencingClient(this);
     }
 
     @Override
@@ -87,5 +110,107 @@ public class MapsActivity
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                //addLocationAlert(latLng.latitude, latLng.longitude);
+            }
+        });
     }
+
+    private PendingIntent getGeofencePendingIntent() {
+        Intent intent = new Intent(this, LocationAlertIntentService.class);
+        return PendingIntent.getService(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    private GeofencingRequest getGeofencingRequest(Geofence geofence) {
+        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL);
+        builder.addGeofence(geofence);
+        return builder.build();
+    }
+
+    private Geofence getGeofence(double lat, double lang, String key) {
+        return new Geofence.Builder()
+                .setRequestId(key)
+                .setCircularRegion(lat, lang, GEOFENCE_RADIUS)
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
+                        Geofence.GEOFENCE_TRANSITION_DWELL)
+                .setLoiteringDelay(10000)
+                .build();
+    }
+
+    private boolean isLocationAccessPermitted() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void requestLocationAccessPermission() {
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                LOC_PERM_REQ_CODE);
+    }
+
+    private void addLocationAlert(double lat, double lng) {
+            String key = "" + lat + "-" + lng;
+            Geofence geofence = getGeofence(lat, lng, key);
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            geofencingClient.addGeofences(getGeofencingRequest(geofence),
+                    getGeofencePendingIntent())
+                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if (task.isSuccessful()) {
+                                Toast.makeText(MapsActivity.this,
+                                        "Location alter has been added",
+                                        Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MapsActivity.this,
+                                        "Location alter could not be added",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+    }
+
+    private void removeLocationAlert(){
+        if (isLocationAccessPermitted()) {
+            requestLocationAccessPermission();
+        } else {
+            geofencingClient.removeGeofences(getGeofencePendingIntent())
+                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if (task.isSuccessful()) {
+                                Toast.makeText(MapsActivity.this,
+                                        "Location alters have been removed",
+                                        Toast.LENGTH_SHORT).show();
+                            }else{
+                                Toast.makeText(MapsActivity.this,
+                                        "Location alters could not be removed",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+        }
+    }
+
 }
