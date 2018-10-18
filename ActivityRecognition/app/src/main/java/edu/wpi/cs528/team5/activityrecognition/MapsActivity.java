@@ -23,6 +23,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 public class MapsActivity
@@ -123,26 +125,29 @@ public class MapsActivity
     }
 
     private PendingIntent getGeofencePendingIntent() {
+        Log.d(IDENTIFIER, "createGeofencePendingIntent");
+
         Intent intent = new Intent(this, LocationAlertIntentService.class);
         return PendingIntent.getService(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     private GeofencingRequest getGeofencingRequest(Geofence geofence) {
-        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
-
-        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL);
-        builder.addGeofence(geofence);
-        return builder.build();
+        Log.d(IDENTIFIER, "createGeofenceRequest");
+        return new GeofencingRequest.Builder()
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                .addGeofence(geofence)
+                .build();
     }
 
     private Geofence getGeofence(double lat, double lang, String key) {
+        Log.d(IDENTIFIER, "createGeofence");
         return new Geofence.Builder()
                 .setRequestId(key)
                 .setCircularRegion(lat, lang, GEOFENCE_RADIUS)
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
-                        Geofence.GEOFENCE_TRANSITION_DWELL)
+                        Geofence.GEOFENCE_TRANSITION_DWELL | Geofence.GEOFENCE_TRANSITION_EXIT)
                 .setLoiteringDelay(10000)
                 .build();
     }
@@ -176,23 +181,28 @@ public class MapsActivity
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
             return;
-        }
-        geofencingClient.addGeofences(getGeofencingRequest(geofence),
-                getGeofencePendingIntent())
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (task.isSuccessful()) {
+        } else {
+            geofencingClient.addGeofences(getGeofencingRequest(geofence), getGeofencePendingIntent())
+                    .addOnSuccessListener(this, new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.i(IDENTIFIER, "success");
                             Toast.makeText(MapsActivity.this,
                                     "Location alter has been added",
                                     Toast.LENGTH_SHORT).show();
-                        } else {
+                        }
+                    })
+                    .addOnFailureListener(this, new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.i(IDENTIFIER, "failure");
                             Toast.makeText(MapsActivity.this,
                                     "Location alter could not be added",
                                     Toast.LENGTH_SHORT).show();
                         }
-                    }
-                });
+                    });
+        }
+
     }
 
     private void removeLocationAlert() {
