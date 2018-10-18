@@ -15,6 +15,7 @@ buildscript {
     }
 }
 
+//https://github.com/idehub/react-native-google-analytics-bridge/wiki/Solution-for-Android-build-failure-issues
 allprojects {
     repositories {
         google()
