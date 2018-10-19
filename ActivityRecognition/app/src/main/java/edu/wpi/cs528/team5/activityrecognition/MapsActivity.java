@@ -17,6 +17,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -75,10 +76,29 @@ public class MapsActivity
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
             String message = intent.getStringExtra("message");
+            int count = intent.getIntExtra("count", 0);
+            updateVisitGeoFenceTextView(message, count);
             Log.d("receiver", "Got message: " + message);
         }
     };
 
+    private void updateVisitGeoFenceTextView(String geoFence, int count) {
+        switch (geoFence) {
+            case "fullerLab":
+                setTextView(R.id.fuller, count);
+                break;
+            case "gordanLibrary":
+                setTextView(R.id.gordon, count);
+                break;
+                default:
+                    break;
+        }
+    }
+
+    private void setTextView(int textViewId, int count) {
+        TextView textView = (TextView)findViewById(textViewId);
+        textView.setText(textView.getText() + Integer.toString(count));
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,6 +112,8 @@ public class MapsActivity
 
         geofencingClient = LocationServices.getGeofencingClient(this);
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+//        setTextView(R.id.fuller, 0);
+//        setTextView(R.id.gordon, 0);
     }
 
     @Override
@@ -211,7 +233,7 @@ public class MapsActivity
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_DWELL
                         | Geofence.GEOFENCE_TRANSITION_EXIT)
-                .setLoiteringDelay(10000)
+                .setLoiteringDelay(3000)
                 .build();
     }
 

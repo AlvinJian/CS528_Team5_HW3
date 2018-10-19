@@ -31,6 +31,9 @@ public class LocationAlertIntentService extends IntentService {
     private static final String channelId = "default_channel_id";
     private static final String channelDescription = "Default Channel";
 
+    private int visit_fuller_count = 0;
+    private int visit_gordon_count = 0;
+
     // Defines a custom Intent action
     public static final String BROADCAST_ACTION = "com.example.android.threadsample.BROADCAST";
 
@@ -41,11 +44,24 @@ public class LocationAlertIntentService extends IntentService {
 
     // Send an Intent with an action named "custom-event-name". The Intent sent should
     // be received by the ReceiverActivity.
-    private void sendMessage() {
+    private void sendMessage(String message) {
         Log.d("sender", "Broadcasting message");
-        Intent intent = new Intent(BROADCAST_ACTION);
         // You can also include some extra data.
-        intent.putExtra("message", "This is my message!");
+        Intent intent = new Intent(BROADCAST_ACTION);
+        intent.putExtra("message", message);
+        switch (message) {
+            case "fullerLab":
+                visit_fuller_count += 1;
+                intent.putExtra("count", visit_fuller_count);
+                break;
+            case "gordanLibrary":
+                visit_gordon_count += 1;
+                intent.putExtra("count", visit_gordon_count);
+                break;
+            default:
+                break;
+        }
+
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -61,11 +77,8 @@ public class LocationAlertIntentService extends IntentService {
 
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
 
-        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
-                geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL ||
-                geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
-            Log.i(TAG, "notification");
-            Log.i(TAG, geofencingEvent.getTriggeringLocation().getLatitude() + "" + geofencingEvent.getTriggeringLocation().getLongitude());
+        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
+//            Log.i(TAG, geofencingEvent.getTriggeringLocation().getLatitude() + "" + geofencingEvent.getTriggeringLocation().getLongitude());
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
 
             String transitionDetails = getGeofenceTransitionInfo(
@@ -74,8 +87,8 @@ public class LocationAlertIntentService extends IntentService {
             String transitionType = getTransitionString(geofenceTransition);
 
             notifyLocationAlert(transitionType, transitionDetails);
-            Log.i(TAG, "*************************************" + triggeringGeofences.get(0).getRequestId());
-            sendMessage();
+            Log.i(TAG, "*************************************" + triggeringGeofences.size());
+            sendMessage(triggeringGeofences.get(0).getRequestId());
         }
     }
 
