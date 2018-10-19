@@ -11,7 +11,9 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.os.Binder;
 import android.os.IBinder;
+import android.provider.SyncStateContract;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -26,21 +28,25 @@ import java.util.Locale;
 public class LocationAlertIntentService extends IntentService {
     private static final String TAG = "LocationAlertIS";
     private GeofencingEvent geofencingEvent;
-    private final IBinder binder = new LocationBinder();
+    private static final String channelId = "default_channel_id";
+    private static final String channelDescription = "Default Channel";
 
-    public class LocationBinder extends Binder {
-        LocationAlertIntentService getLocationAlertService() {
-            return LocationAlertIntentService.this;
-        }
-    }
+    // Defines a custom Intent action
+    public static final String BROADCAST_ACTION = "com.example.android.threadsample.BROADCAST";
+
 
     public LocationAlertIntentService() {
         super(TAG);
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return binder;
+    // Send an Intent with an action named "custom-event-name". The Intent sent should
+    // be received by the ReceiverActivity.
+    private void sendMessage() {
+        Log.d("sender", "Broadcasting message");
+        Intent intent = new Intent(BROADCAST_ACTION);
+        // You can also include some extra data.
+        intent.putExtra("message", "This is my message!");
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     @Override
@@ -52,7 +58,6 @@ public class LocationAlertIntentService extends IntentService {
             return;
         }
 
-        Log.i(TAG, getTransitionString(geofencingEvent.getGeofenceTransition()));
 
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
 
@@ -69,6 +74,8 @@ public class LocationAlertIntentService extends IntentService {
             String transitionType = getTransitionString(geofenceTransition);
 
             notifyLocationAlert(transitionType, transitionDetails);
+            Log.i(TAG, "*************************************" + triggeringGeofences.get(0).getRequestId());
+            sendMessage();
         }
     }
 
@@ -156,8 +163,6 @@ public class LocationAlertIntentService extends IntentService {
     private void createChannel() {
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        String channelId = "default_channel_id";
-        String channelDescription = "Default Channel";
         // Since android Oreo notification channel is needed.
         //Check if notification channel exists and if not create one
         // Reference: https://stackoverflow.com/questions/45668079/notificationchannel-issue-in-android-o
@@ -177,22 +182,6 @@ public class LocationAlertIntentService extends IntentService {
         createChannel();
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        String channelId = "default_channel_id";
-//        String channelDescription = "Default Channel";
-//        // Since android Oreo notification channel is needed.
-//        //Check if notification channel exists and if not create one
-//        // Reference: https://stackoverflow.com/questions/45668079/notificationchannel-issue-in-android-o
-//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-//            NotificationChannel notificationChannel = mNotificationManager.getNotificationChannel(channelId);
-//            if (notificationChannel == null) {
-//                int importance = NotificationManager.IMPORTANCE_HIGH; //Set the importance level
-//                notificationChannel = new NotificationChannel(channelId, channelDescription, importance);
-//                notificationChannel.setLightColor(Color.GREEN); //Set if it is necesssary
-//                notificationChannel.enableVibration(true); //Set if it is necesssary
-//                mNotificationManager.createNotificationChannel(notificationChannel);
-//            }
-//        }
 
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this, channelId)
