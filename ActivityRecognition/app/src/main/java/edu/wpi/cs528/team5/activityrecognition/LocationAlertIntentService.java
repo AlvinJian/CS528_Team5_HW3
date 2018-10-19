@@ -1,11 +1,16 @@
 package edu.wpi.cs528.team5.activityrecognition;
 
 import android.app.IntentService;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Location;
+import android.os.Binder;
+import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
@@ -19,29 +24,43 @@ import java.util.List;
 import java.util.Locale;
 
 public class LocationAlertIntentService extends IntentService {
-    private static final String IDENTIFIER = "LocationAlertIS";
+    private static final String TAG = "LocationAlertIS";
+    private GeofencingEvent geofencingEvent;
+    private final IBinder binder = new LocationBinder();
+
+    public class LocationBinder extends Binder {
+        LocationAlertIntentService getLocationAlertService() {
+            return LocationAlertIntentService.this;
+        }
+    }
 
     public LocationAlertIntentService() {
-        super(IDENTIFIER);
+        super(TAG);
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return binder;
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
 
-        GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
-
+        geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
-            Log.e(IDENTIFIER, "" + getErrorString(geofencingEvent.getErrorCode()));
+            Log.e(TAG, "" + getErrorString(geofencingEvent.getErrorCode()));
             return;
         }
 
-        Log.i(IDENTIFIER, geofencingEvent.toString());
+        Log.i(TAG, getTransitionString(geofencingEvent.getGeofenceTransition()));
 
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
 
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
-                geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL) {
-
+                geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL ||
+                geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
+            Log.i(TAG, "notification");
+            Log.i(TAG, geofencingEvent.getTriggeringLocation().getLatitude() + "" + geofencingEvent.getTriggeringLocation().getLongitude());
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
 
             String transitionDetails = getGeofenceTransitionInfo(
@@ -49,9 +68,12 @@ public class LocationAlertIntentService extends IntentService {
 
             String transitionType = getTransitionString(geofenceTransition);
 
-
             notifyLocationAlert(transitionType, transitionDetails);
         }
+    }
+
+    public Location getLocationLatLng() {
+        return geofencingEvent.getTriggeringLocation();
     }
 
     private String getGeofenceTransitionInfo(List<Geofence> triggeringGeofences) {
@@ -131,18 +153,55 @@ public class LocationAlertIntentService extends IntentService {
         }
     }
 
-    private void notifyLocationAlert(String locTransitionType, String locationDetails) {
+    private void createChannel() {
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        String CHANNEL_ID = "CS528";
+        String channelId = "default_channel_id";
+        String channelDescription = "Default Channel";
+        // Since android Oreo notification channel is needed.
+        //Check if notification channel exists and if not create one
+        // Reference: https://stackoverflow.com/questions/45668079/notificationchannel-issue-in-android-o
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel = mNotificationManager.getNotificationChannel(channelId);
+            if (notificationChannel == null) {
+                int importance = NotificationManager.IMPORTANCE_HIGH; //Set the importance level
+                notificationChannel = new NotificationChannel(channelId, channelDescription, importance);
+                notificationChannel.setLightColor(Color.GREEN); //Set if it is necesssary
+                notificationChannel.enableVibration(true); //Set if it is necesssary
+                mNotificationManager.createNotificationChannel(notificationChannel);
+            }
+        }
+    }
+
+    private void notifyLocationAlert(String locTransitionType, String locationDetails) {
+        createChannel();
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        String channelId = "default_channel_id";
+//        String channelDescription = "Default Channel";
+//        // Since android Oreo notification channel is needed.
+//        //Check if notification channel exists and if not create one
+//        // Reference: https://stackoverflow.com/questions/45668079/notificationchannel-issue-in-android-o
+//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+//            NotificationChannel notificationChannel = mNotificationManager.getNotificationChannel(channelId);
+//            if (notificationChannel == null) {
+//                int importance = NotificationManager.IMPORTANCE_HIGH; //Set the importance level
+//                notificationChannel = new NotificationChannel(channelId, channelDescription, importance);
+//                notificationChannel.setLightColor(Color.GREEN); //Set if it is necesssary
+//                notificationChannel.enableVibration(true); //Set if it is necesssary
+//                mNotificationManager.createNotificationChannel(notificationChannel);
+//            }
+//        }
+
         NotificationCompat.Builder builder =
-                new NotificationCompat.Builder(this, CHANNEL_ID)
+                new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.ic_launcher_foreground)
                         .setContentTitle(locTransitionType)
                         .setContentText(locationDetails);
 
         builder.setAutoCancel(true);
 
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         mNotificationManager.notify(0, builder.build());
     }
