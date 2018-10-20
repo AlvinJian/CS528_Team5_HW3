@@ -3,6 +3,7 @@
     <string name="title_activity_maps">Map</string>
     <string name="visit_fuller">Visits to Fuller labs geoFence: </string>
     <string name="visit_gordon">Visits to Library labs geoFence: </string>
+
     <string name="activity_in_vehicle">In Vehicle</string>
     <string name="activity_on_bicycle">On Bicycle</string>
     <string name="activity_on_foot">On Foot</string>

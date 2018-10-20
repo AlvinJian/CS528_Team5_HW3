@@ -1,4 +1,4 @@
-package edu.wpi.activityrecognition;
+package edu.wpi.cs528.team5.activityrecognition;
 
 import android.app.PendingIntent;
 import android.app.Service;
