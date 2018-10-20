@@ -74,8 +74,8 @@ public class LocationAlertIntentService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         visit_fuller_count = intent.getIntExtra("fuller", 0);
         visit_gordon_count = intent.getIntExtra("gordon", 0);
-        Log.i("*****************visit_fuller_count", Integer.toString(visit_fuller_count));
-        Log.i("*****************visit_gordon_count", Integer.toString(visit_gordon_count));
+        Log.i("***visit_fuller_count", Integer.toString(visit_fuller_count));
+        Log.i("***visit_gordon_count", Integer.toString(visit_gordon_count));
         geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
             Log.e(TAG, "" + getErrorString(geofencingEvent.getErrorCode()));
@@ -96,7 +96,20 @@ public class LocationAlertIntentService extends IntentService {
 
             notifyLocationAlert(transitionType, transitionDetails);
 //            Log.i(TAG, "*************************************" + triggeringGeofences.size());
+            StepCounterService service = MapsActivity.GetStepService();
+            if (service != null)
+            {
+                service.startListening();
+            }
             sendMessage(triggeringGeofences.get(0).getRequestId());
+        }
+        else if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT)
+        {
+            StepCounterService service = MapsActivity.GetStepService();
+            if (service != null) {
+                service.stopListening();
+                service.resetStep();
+            }
         }
     }
 

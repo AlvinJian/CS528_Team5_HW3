@@ -3,14 +3,17 @@ package edu.wpi.cs528.team5.activityrecognition;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -24,7 +27,6 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -82,8 +84,8 @@ public class MapsActivity
             String message = intent.getStringExtra("message");
             visit_fuller_count += intent.getIntExtra("fuller", 0);
             visit_gordon_count += intent.getIntExtra("gordon", 0);
-            Log.i("-----------------visit_fuller_count", Integer.toString(visit_fuller_count));
-            Log.i("-----------------visit_gordon_count", Integer.toString(visit_gordon_count));
+            Log.i("---visit_fuller_count", Integer.toString(visit_fuller_count));
+            Log.i("---visit_gordon_count", Integer.toString(visit_gordon_count));
             updateVisitGeoFenceTextView(message);
             Log.d("receiver", "Got message: " + message);
         }
@@ -121,7 +123,8 @@ public class MapsActivity
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 //        setTextView(R.id.fuller, 0);
 //        setTextView(R.id.gordon, 0);
-        startService(new Intent(this, StepCounterService.class));
+        bindService(new Intent(this,StepCounterService.class),
+                sConnection, BIND_AUTO_CREATE);
     }
 
     @Override
@@ -140,6 +143,7 @@ public class MapsActivity
     protected void onDestroy() {
         super.onDestroy();
         mMapView.onDestroy();
+        if (stepService != null) unbindService(sConnection);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
@@ -421,4 +425,25 @@ public class MapsActivity
             fusedLocationProviderClient.requestLocationUpdates(locationRequest, getGeofencePendingIntent());
     }
 
+    private static StepCounterService stepService = null;
+    private static ServiceConnection sConnection = new ServiceConnection()
+    {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            StepCounterService.StepServiceBinder binder =
+                    (StepCounterService.StepServiceBinder) service;
+            stepService = binder.getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            stepService = null;
+        }
+    };
+
+    public static StepCounterService GetStepService()
+    {
+        return stepService;
+    }
 }
