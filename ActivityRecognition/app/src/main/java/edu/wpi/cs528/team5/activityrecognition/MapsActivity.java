@@ -49,17 +49,19 @@ import java.util.Map;
 public class MapsActivity
         extends AppCompatActivity
         implements
-        OnMapReadyCallback,
-        LocationListener {
+        OnMapReadyCallback {
 
     private static final LatLng fullerLab = new LatLng(42.275078, -71.806574);
     private static final LatLng gordanLibrary = new LatLng(42.274228, -71.806544);
+
+    private int visit_fuller_count = 0;
+    private int visit_gordon_count = 0;
 
     private static final String TAG = "MapsActivity";
     private static final String GEOFENCE_REQ_ID = "My Geofence";
     private GoogleMap mMap;
     private MapView mMapView;
-
+    private Bundle bundle = new Bundle();
     private static final int LOC_PERM_REQ_CODE = 1;
     private static final int GEOFENCE_RADIUS = 50;              //meters
 //    private static final int GEOFENCE_EXPIRATION = 6000;        //in milli seconds
@@ -69,6 +71,8 @@ public class MapsActivity
     //    private Marker geoFenceMarker;
     private Map<String, Marker> geoFenceMarkerMap;
 
+    private static final String BROADCAST_ACTION = "com.example.android.threadsample.BROADCAST";
+
     // Our handler for received Intents. This will be called whenever an Intent
     // with an action named "custom-event-name" is broadcasted.
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
@@ -76,28 +80,31 @@ public class MapsActivity
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
             String message = intent.getStringExtra("message");
-            int count = intent.getIntExtra("count", 0);
-            updateVisitGeoFenceTextView(message, count);
+            visit_fuller_count += intent.getIntExtra("fuller", 0);
+            visit_gordon_count += intent.getIntExtra("gordon", 0);
+            Log.i("-----------------visit_fuller_count", Integer.toString(visit_fuller_count));
+            Log.i("-----------------visit_gordon_count", Integer.toString(visit_gordon_count));
+            updateVisitGeoFenceTextView(message);
             Log.d("receiver", "Got message: " + message);
         }
     };
 
-    private void updateVisitGeoFenceTextView(String geoFence, int count) {
+    private void updateVisitGeoFenceTextView(String geoFence) {
         switch (geoFence) {
             case "fullerLab":
-                setTextView(R.id.fuller, count);
+                setTextView(R.id.fuller, visit_fuller_count, getString(R.string.visit_fuller));
                 break;
             case "gordanLibrary":
-                setTextView(R.id.gordon, count);
+                setTextView(R.id.gordon, visit_gordon_count, getString(R.string.visit_gordon));
                 break;
                 default:
                     break;
         }
     }
 
-    private void setTextView(int textViewId, int count) {
+    private void setTextView(int textViewId, int count, String string) {
         TextView textView = (TextView)findViewById(textViewId);
-        textView.setText(textView.getText() + Integer.toString(count));
+        textView.setText(string + Integer.toString(count));
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,7 +113,7 @@ public class MapsActivity
         mMapView = findViewById(R.id.map);
         mMapView.getMapAsync(this);
         mMapView.onCreate(savedInstanceState);
-        String BROADCAST_ACTION = "com.example.android.threadsample.BROADCAST";
+
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
                 new IntentFilter(BROADCAST_ACTION));
 
@@ -414,16 +421,4 @@ public class MapsActivity
             fusedLocationProviderClient.requestLocationUpdates(locationRequest, getGeofencePendingIntent());
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.d(TAG, "onLocationChanged [" + location + "]");
-        //lastLocation = location;
-    }
-
-    private void initializeLocationManager() {
-        Log.e(TAG, "initializeLocationManager");
-        if (mLocationManager == null) {
-            mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-        }
-    }
 }

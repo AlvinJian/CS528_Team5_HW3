@@ -10,12 +10,14 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.SyncStateContract;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofenceStatusCodes;
@@ -31,8 +33,8 @@ public class LocationAlertIntentService extends IntentService {
     private static final String channelId = "default_channel_id";
     private static final String channelDescription = "Default Channel";
 
-    private int visit_fuller_count = 0;
-    private int visit_gordon_count = 0;
+    private int visit_fuller_count;
+    private int visit_gordon_count;
 
     // Defines a custom Intent action
     public static final String BROADCAST_ACTION = "com.example.android.threadsample.BROADCAST";
@@ -45,18 +47,21 @@ public class LocationAlertIntentService extends IntentService {
     // Send an Intent with an action named "custom-event-name". The Intent sent should
     // be received by the ReceiverActivity.
     private void sendMessage(String message) {
-        Log.d("sender", "Broadcasting message");
+//        Log.d("sender", "Broadcasting message");
         // You can also include some extra data.
         Intent intent = new Intent(BROADCAST_ACTION);
         intent.putExtra("message", message);
         switch (message) {
             case "fullerLab":
                 visit_fuller_count += 1;
-                intent.putExtra("count", visit_fuller_count);
+                intent.putExtra("fuller", visit_fuller_count);
+//                Log.i("visit_fuller_count", Integer.toString(visit_fuller_count));
+
                 break;
             case "gordanLibrary":
                 visit_gordon_count += 1;
-                intent.putExtra("count", visit_gordon_count);
+                intent.putExtra("gordon", visit_gordon_count);
+//                Log.i("visit_gordon_count", Integer.toString(visit_gordon_count));
                 break;
             default:
                 break;
@@ -67,7 +72,10 @@ public class LocationAlertIntentService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-
+        visit_fuller_count = intent.getIntExtra("fuller", 0);
+        visit_gordon_count = intent.getIntExtra("gordon", 0);
+        Log.i("*****************visit_fuller_count", Integer.toString(visit_fuller_count));
+        Log.i("*****************visit_gordon_count", Integer.toString(visit_gordon_count));
         geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
             Log.e(TAG, "" + getErrorString(geofencingEvent.getErrorCode()));
@@ -87,7 +95,7 @@ public class LocationAlertIntentService extends IntentService {
             String transitionType = getTransitionString(geofenceTransition);
 
             notifyLocationAlert(transitionType, transitionDetails);
-            Log.i(TAG, "*************************************" + triggeringGeofences.size());
+//            Log.i(TAG, "*************************************" + triggeringGeofences.size());
             sendMessage(triggeringGeofences.get(0).getRequestId());
         }
     }
