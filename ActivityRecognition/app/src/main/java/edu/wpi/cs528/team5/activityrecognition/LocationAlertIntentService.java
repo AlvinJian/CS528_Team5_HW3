@@ -96,6 +96,7 @@ public class LocationAlertIntentService extends IntentService {
 
             notifyLocationAlert(transitionType, transitionDetails);
 //            Log.i(TAG, "*************************************" + triggeringGeofences.size());
+
             sendMessage(triggeringGeofences.get(0).getRequestId());
         }
     }

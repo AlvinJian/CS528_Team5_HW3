@@ -56,6 +56,8 @@ public class MapsActivity
 
     private int visit_fuller_count = 0;
     private int visit_gordon_count = 0;
+    private int visit_fuller_subcount=0;
+    private int visit_gordon_subcount=0;
 
     private static final String TAG = "MapsActivity";
     private static final String GEOFENCE_REQ_ID = "My Geofence";
@@ -80,26 +82,37 @@ public class MapsActivity
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
             String message = intent.getStringExtra("message");
-            visit_fuller_count += intent.getIntExtra("fuller", 0);
-            visit_gordon_count += intent.getIntExtra("gordon", 0);
+            switch (message){
+                case "fuller":visit_fuller_subcount=intent.getIntExtra("fuller",0);break;
+                case "gordan":visit_gordon_subcount=intent.getIntExtra("gordon",0);break;
+            }
+//            visit_fuller_count += intent.getIntExtra("fuller", 0);
+//            visit_gordon_count += intent.getIntExtra("gordon", 0);
+            if(visit_fuller_subcount>=6) {visit_fuller_count++;updateVisitGeoFenceTextView("fuller");visit_fuller_subcount=0;}
+            if(visit_gordon_subcount>=6) {visit_gordon_count++;updateVisitGeoFenceTextView("gordon");visit_gordon_subcount=0;}
             Log.i("-----------------visit_fuller_count", Integer.toString(visit_fuller_count));
             Log.i("-----------------visit_gordon_count", Integer.toString(visit_gordon_count));
-            updateVisitGeoFenceTextView(message);
+//            updateVisitGeoFenceTextView(message);
             Log.d("receiver", "Got message: " + message);
         }
     };
 
     private void updateVisitGeoFenceTextView(String geoFence) {
+        Context context=MapsActivity.this;
+        CharSequence text;
         switch (geoFence) {
             case "fullerLab":
+                text="You have taken 6 steps inside the Fuller Labs, incrementing counter";
                 setTextView(R.id.fuller, visit_fuller_count, getString(R.string.visit_fuller));
                 break;
             case "gordanLibrary":
+                text="You have taken 6 steps inside the Gordon Library, incrementing counter";
                 setTextView(R.id.gordon, visit_gordon_count, getString(R.string.visit_gordon));
                 break;
                 default:
                     break;
         }
+        Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
     }
 
     private void setTextView(int textViewId, int count, String string) {
