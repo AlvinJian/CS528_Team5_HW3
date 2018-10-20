@@ -3,14 +3,17 @@ package edu.wpi.cs528.team5.activityrecognition;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -24,7 +27,6 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -51,7 +53,8 @@ public class MapsActivity
         implements
         OnMapReadyCallback {
 
-    private static final LatLng fullerLab = new LatLng(42.275078, -71.806574);
+    // TODO revert coodinate to fuller lab
+    private static final LatLng fullerLab = new LatLng(42.274336, -71.808951);
     private static final LatLng gordanLibrary = new LatLng(42.274228, -71.806544);
 
     private int visit_fuller_count = 0;
@@ -65,7 +68,7 @@ public class MapsActivity
     private MapView mMapView;
     private Bundle bundle = new Bundle();
     private static final int LOC_PERM_REQ_CODE = 1;
-    private static final int GEOFENCE_RADIUS = 50;              //meters
+    private static final int GEOFENCE_RADIUS = 25;              //meters
 //    private static final int GEOFENCE_EXPIRATION = 6000;        //in milli seconds
 
     private GeofencingClient geofencingClient;
@@ -82,6 +85,7 @@ public class MapsActivity
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
             String message = intent.getStringExtra("message");
+
             switch (message){
                 case "fuller":visit_fuller_subcount=intent.getIntExtra("fuller",0);break;
                 case "gordan":visit_gordon_subcount=intent.getIntExtra("gordon",0);break;
@@ -90,9 +94,10 @@ public class MapsActivity
 //            visit_gordon_count += intent.getIntExtra("gordon", 0);
             if(visit_fuller_subcount>=6) {visit_fuller_count++;updateVisitGeoFenceTextView("fuller");visit_fuller_subcount=0;}
             if(visit_gordon_subcount>=6) {visit_gordon_count++;updateVisitGeoFenceTextView("gordon");visit_gordon_subcount=0;}
-            Log.i("-----------------visit_fuller_count", Integer.toString(visit_fuller_count));
-            Log.i("-----------------visit_gordon_count", Integer.toString(visit_gordon_count));
+            Log.i("----visit_fuller_count", Integer.toString(visit_fuller_count));
+            Log.i("----visit_gordon_count", Integer.toString(visit_gordon_count));
 //            updateVisitGeoFenceTextView(message);
+
             Log.d("receiver", "Got message: " + message);
         }
     };
@@ -134,7 +139,8 @@ public class MapsActivity
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 //        setTextView(R.id.fuller, 0);
 //        setTextView(R.id.gordon, 0);
-        startService(new Intent(this, StepCounterService.class));
+        bindService(new Intent(this,StepCounterService.class),
+                sConnection, BIND_AUTO_CREATE);
     }
 
     @Override
@@ -153,6 +159,7 @@ public class MapsActivity
     protected void onDestroy() {
         super.onDestroy();
         mMapView.onDestroy();
+        if (stepService != null) unbindService(sConnection);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
@@ -434,4 +441,25 @@ public class MapsActivity
             fusedLocationProviderClient.requestLocationUpdates(locationRequest, getGeofencePendingIntent());
     }
 
+    private static StepCounterService stepService = null;
+    private static ServiceConnection sConnection = new ServiceConnection()
+    {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            StepCounterService.StepServiceBinder binder =
+                    (StepCounterService.StepServiceBinder) service;
+            stepService = binder.getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            stepService = null;
+        }
+    };
+
+    public static StepCounterService GetStepService()
+    {
+        return stepService;
+    }
 }
