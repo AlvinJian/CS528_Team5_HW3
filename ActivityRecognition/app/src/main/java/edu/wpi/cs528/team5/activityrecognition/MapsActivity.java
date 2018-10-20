@@ -87,13 +87,15 @@ public class MapsActivity
             String message = intent.getStringExtra("message");
 
             switch (message){
-                case "fuller":visit_fuller_subcount=intent.getIntExtra("fuller",0);break;
-                case "gordan":visit_gordon_subcount=intent.getIntExtra("gordon",0);break;
+                case "fuller":
+                    visit_fuller_subcount=GetStepService().getStep();break;
+                case "gordan":
+                    visit_gordon_subcount=GetStepService().getStep();break;
             }
 //            visit_fuller_count += intent.getIntExtra("fuller", 0);
 //            visit_gordon_count += intent.getIntExtra("gordon", 0);
-            if(visit_fuller_subcount>=6) {visit_fuller_count++;updateVisitGeoFenceTextView("fuller");visit_fuller_subcount=0;}
-            if(visit_gordon_subcount>=6) {visit_gordon_count++;updateVisitGeoFenceTextView("gordon");visit_gordon_subcount=0;}
+            if(visit_fuller_subcount>=6) {visit_fuller_count++;updateVisitGeoFenceTextView("fuller");visit_fuller_subcount=0;GetStepService().stopListening();GetStepService().resetStep();}
+            if(visit_gordon_subcount>=6) {visit_gordon_count++;updateVisitGeoFenceTextView("gordon");visit_gordon_subcount=0;GetStepService().stopListening();GetStepService().resetStep();}
             Log.i("----visit_fuller_count", Integer.toString(visit_fuller_count));
             Log.i("----visit_gordon_count", Integer.toString(visit_gordon_count));
 //            updateVisitGeoFenceTextView(message);
@@ -104,7 +106,7 @@ public class MapsActivity
 
     private void updateVisitGeoFenceTextView(String geoFence) {
         Context context=MapsActivity.this;
-        CharSequence text;
+        CharSequence text="";
         switch (geoFence) {
             case "fullerLab":
                 text="You have taken 6 steps inside the Fuller Labs, incrementing counter";
@@ -117,7 +119,7 @@ public class MapsActivity
                 default:
                     break;
         }
-        Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
     }
 
     private void setTextView(int textViewId, int count, String string) {

@@ -102,7 +102,7 @@ public class LocationAlertIntentService extends IntentService {
             {
                 service.startListening();
             }
-            sendMessage(triggeringGeofences.get(0).getRequestId());
+//            sendMessage(triggeringGeofences.get(0).getRequestId());
         }
         else if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT)
         {
@@ -111,6 +111,27 @@ public class LocationAlertIntentService extends IntentService {
                 service.stopListening();
                 service.resetStep();
             }
+        }
+        else if(geofenceTransition==Geofence.GEOFENCE_TRANSITION_DWELL){
+            List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
+            String transitionDetails = getGeofenceTransitionInfo(
+                    triggeringGeofences);
+            String transitionType = getTransitionString(geofenceTransition);
+
+            notifyLocationAlert(transitionType, transitionDetails);
+            StepCounterService service = MapsActivity.GetStepService();
+            if(service!=null)sendMessage(triggeringGeofences.get(0).getRequestId());
+
+        }
+        else {
+            List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
+            String transitionDetails = getGeofenceTransitionInfo(
+                        triggeringGeofences);
+            String transitionType = getTransitionString(geofenceTransition);
+
+            notifyLocationAlert(transitionType, transitionDetails);
+            StepCounterService service = MapsActivity.GetStepService();
+            if(service!=null) sendMessage(triggeringGeofences.get(0).getRequestId());
         }
     }
 
