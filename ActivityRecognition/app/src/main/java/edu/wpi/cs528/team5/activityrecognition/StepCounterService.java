@@ -45,6 +45,7 @@ public class StepCounterService extends Service
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
         super.onDestroy();
+        stopListening();
         sensorThread.quitSafely();
     }
 
@@ -65,8 +66,7 @@ public class StepCounterService extends Service
     {
         if (!hooked) return;
         sensorManager.unregisterListener(this);
-        Toast.makeText(this, "stop listening sensor" ,
-                Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "stop listening sensor");
         hooked = false;
     }
 
