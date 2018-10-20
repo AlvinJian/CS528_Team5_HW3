@@ -38,8 +38,7 @@ public class StepCounterService extends Service
     @Override
     public void onCreate() {
         super.onCreate();
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        Log.d(TAG, "onCreate");
     }
 
     @Override
@@ -49,19 +48,26 @@ public class StepCounterService extends Service
         sensorThread.quitSafely();
     }
 
+    private boolean hooked = false;
+
     public void startListening()
     {
+        if (hooked) return;
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         sensorManager.registerListener(this, accel,
                 SensorManager.SENSOR_DELAY_FASTEST, sensorHandler);
-        Toast.makeText(this, "start listening sensor" ,
-                Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "start listening sensor");
+        hooked = true;
     }
 
     public void stopListening()
     {
+        if (!hooked) return;
         sensorManager.unregisterListener(this);
         Toast.makeText(this, "stop listening sensor" ,
                 Toast.LENGTH_SHORT).show();
+        hooked = false;
     }
 
     public void resetStep()
