@@ -54,13 +54,14 @@ public class MapsActivity
         OnMapReadyCallback {
 
     // TODO revert coodinate to fuller lab
-    private static final LatLng fullerLab = new LatLng(42.274300, -71.810306);
+    private static final LatLng fullerLab = new LatLng(42.267626, -71.805755);
     private static final LatLng gordanLibrary = new LatLng(42.274228, -71.806544);
 
     private int visit_fuller_count = 0;
     private int visit_gordon_count = 0;
     private int visit_fuller_subcount=0;
     private int visit_gordon_subcount=0;
+    private String inGeofence="";
 
     private static final String TAG = "MapsActivity";
     private static final String GEOFENCE_REQ_ID = "My Geofence";
@@ -85,19 +86,32 @@ public class MapsActivity
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
             String message = intent.getStringExtra("message");
-
+            Log.i(TAG,inGeofence);
             switch (message){
-                case "fuller":
-                    visit_fuller_subcount=GetStepService().getStep();break;
-                case "gordan":
-                    visit_gordon_subcount=GetStepService().getStep();break;
+                case "fullerLab":
+                    inGeofence="Fuller Lab";visit_fuller_subcount=GetStepService().getStep();break;
+                case "gordanLibrary":
+                    inGeofence="Gordon Library";visit_gordon_subcount=GetStepService().getStep();break;
+                case "update":
+                    if(inGeofence.isEmpty()) break;
+                    if(inGeofence.equals("Fuller Lab")) {
+                        Log.i(TAG,"SHOULD UPDATE HERE "+GetStepService().getStep());
+                        visit_fuller_subcount=GetStepService().getStep();
+                    }
+                    else visit_gordon_subcount=GetStepService().getStep();
+                    break;
+                case "existservice":
+                    if(inGeofence.equals("Fuller Lab")) visit_fuller_subcount=0;
+                    else visit_gordon_subcount=0;
+                    inGeofence="";
+                    break;
             }
 //            visit_fuller_count += intent.getIntExtra("fuller", 0);
 //            visit_gordon_count += intent.getIntExtra("gordon", 0);
-            if(visit_fuller_subcount>=6) {visit_fuller_count++;updateVisitGeoFenceTextView("fuller");visit_fuller_subcount=0;GetStepService().stopListening();GetStepService().resetStep();}
-            if(visit_gordon_subcount>=6) {visit_gordon_count++;updateVisitGeoFenceTextView("gordon");visit_gordon_subcount=0;GetStepService().stopListening();GetStepService().resetStep();}
-            Log.i("----visit_fuller_count", Integer.toString(visit_fuller_count));
-            Log.i("----visit_gordon_count", Integer.toString(visit_gordon_count));
+            if(visit_fuller_subcount>=6) {visit_fuller_count++;updateVisitGeoFenceTextView(inGeofence);visit_fuller_subcount=0;GetStepService().stopListening();GetStepService().resetStep();inGeofence="";}
+            if(visit_gordon_subcount>=6) {visit_gordon_count++;updateVisitGeoFenceTextView(inGeofence);visit_gordon_subcount=0;GetStepService().stopListening();GetStepService().resetStep();inGeofence="";}
+            Log.i("visit_fuller_subcount", Integer.toString(visit_fuller_subcount));
+            Log.i("visit_gordon_subcount", Integer.toString(visit_gordon_subcount));
 //            updateVisitGeoFenceTextView(message);
 
             Log.d("receiver", "Got message: " + message);
@@ -108,18 +122,18 @@ public class MapsActivity
         Context context=MapsActivity.this;
         CharSequence text="";
         switch (geoFence) {
-            case "fullerLab":
+            case "Fuller Lab":
                 text="You have taken 6 steps inside the Fuller Labs, incrementing counter";
                 setTextView(R.id.fuller, visit_fuller_count, getString(R.string.visit_fuller));
                 break;
-            case "gordanLibrary":
+            case "Gordon Library":
                 text="You have taken 6 steps inside the Gordon Library, incrementing counter";
                 setTextView(R.id.gordon, visit_gordon_count, getString(R.string.visit_gordon));
                 break;
                 default:
                     break;
         }
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, text, Toast.LENGTH_LONG).show();
     }
 
     private void setTextView(int textViewId, int count, String string) {

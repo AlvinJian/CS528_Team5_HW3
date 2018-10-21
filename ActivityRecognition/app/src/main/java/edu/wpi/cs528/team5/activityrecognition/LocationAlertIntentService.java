@@ -63,6 +63,10 @@ public class LocationAlertIntentService extends IntentService {
                 intent.putExtra("gordon", visit_gordon_count);
 //                Log.i("visit_gordon_count", Integer.toString(visit_gordon_count));
                 break;
+            case "exitservice":break;
+            case "update":
+                break;
+
             default:
                 break;
         }
@@ -74,8 +78,8 @@ public class LocationAlertIntentService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         visit_fuller_count = intent.getIntExtra("fuller", 0);
         visit_gordon_count = intent.getIntExtra("gordon", 0);
-        Log.i("***visit_fuller_count", Integer.toString(visit_fuller_count));
-        Log.i("***visit_gordon_count", Integer.toString(visit_gordon_count));
+//        Log.i("***visit_fuller_count", Integer.toString(visit_fuller_count));
+//        Log.i("***visit_gordon_count", Integer.toString(visit_gordon_count));
         geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
             Log.e(TAG, "" + getErrorString(geofencingEvent.getErrorCode()));
@@ -103,7 +107,8 @@ public class LocationAlertIntentService extends IntentService {
             {
                 service.startListening();
             }
-//            sendMessage(triggeringGeofences.get(0).getRequestId());
+            sendMessage(triggeringGeofences.get(0).getRequestId());
+            Log.d(TAG,triggeringGeofences.get(0).getRequestId());
         }
         else if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT)
         {
@@ -111,38 +116,42 @@ public class LocationAlertIntentService extends IntentService {
             if (service != null) {
                 service.stopListening();
                 service.resetStep();
+                sendMessage("exitservice");
             }
         }
-        else if(geofenceTransition==Geofence.GEOFENCE_TRANSITION_DWELL){
-            Log.d(TAG, "Geofence.GEOFENCE_TRANSITION_DWELL");
-            List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
-            String transitionDetails = getGeofenceTransitionInfo(
-                    triggeringGeofences);
-            String transitionType = getTransitionString(geofenceTransition);
-
-            notifyLocationAlert(transitionType, transitionDetails);
-            StepCounterService service = MapsActivity.GetStepService();
-            if(service!=null)sendMessage(triggeringGeofences.get(0).getRequestId());
-
+        else{
+            sendMessage("update");
         }
-        else if(getTransitionString(geofenceTransition).equals("location transition")){
-            List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
-            Log.d(TAG, "Location Transition");
-            if (triggeringGeofences != null && triggeringGeofences.size() > 0) {
-                String transitionDetails = getGeofenceTransitionInfo(
-                        triggeringGeofences);
-                String transitionType = getTransitionString(geofenceTransition);
-
-                notifyLocationAlert(transitionType, transitionDetails);
-                StepCounterService service = MapsActivity.GetStepService();
-                if (service != null) sendMessage(triggeringGeofences.get(0).getRequestId());
-            }
-            else
-            {
-                int n = (triggeringGeofences != null)? triggeringGeofences.size(): -1;
-                Log.d(TAG, "triggeringGeofences.size()="+n);
-            }
-        }
+//        else if(geofenceTransition==Geofence.GEOFENCE_TRANSITION_DWELL){
+//            Log.d(TAG, "Geofence.GEOFENCE_TRANSITION_DWELL");
+//            List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
+//            String transitionDetails = getGeofenceTransitionInfo(
+//                    triggeringGeofences);
+//            String transitionType = getTransitionString(geofenceTransition);
+//
+//            notifyLocationAlert(transitionType, transitionDetails);
+//            StepCounterService service = MapsActivity.GetStepService();
+//            if(service!=null)sendMessage(triggeringGeofences.get(0).getRequestId());
+//
+//        }
+//        else if(getTransitionString(geofenceTransition).equals("location transition")){
+//            List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
+//            Log.d(TAG, "Location Transition");
+//            if (triggeringGeofences != null && triggeringGeofences.size() > 0) {
+//                String transitionDetails = getGeofenceTransitionInfo(
+//                        triggeringGeofences);
+//                String transitionType = getTransitionString(geofenceTransition);
+//
+//                notifyLocationAlert(transitionType, transitionDetails);
+//                StepCounterService service = MapsActivity.GetStepService();
+//                if (service != null) sendMessage(triggeringGeofences.get(0).getRequestId());
+//            }
+//            else
+//            {
+//                int n = (triggeringGeofences != null)? triggeringGeofences.size(): -1;
+//                Log.d(TAG, "triggeringGeofences.size()="+n);
+//            }
+//        }
     }
 
     public Location getLocationLatLng() {
@@ -251,7 +260,7 @@ public class LocationAlertIntentService extends IntentService {
 
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this, channelId)
-                        .setSmallIcon(R.drawable.ic_launcher_foreground)
+                        .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle(locTransitionType)
                         .setContentText(locationDetails);
 
