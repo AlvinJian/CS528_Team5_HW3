@@ -84,6 +84,7 @@ public class LocationAlertIntentService extends IntentService {
 
 
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
+        Log.d(TAG, "geofenceTransition="+geofenceTransition);
 
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
 //            Log.i(TAG, geofencingEvent.getTriggeringLocation().getLatitude() + "" + geofencingEvent.getTriggeringLocation().getLongitude());
@@ -113,6 +114,7 @@ public class LocationAlertIntentService extends IntentService {
             }
         }
         else if(geofenceTransition==Geofence.GEOFENCE_TRANSITION_DWELL){
+            Log.d(TAG, "Geofence.GEOFENCE_TRANSITION_DWELL");
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
             String transitionDetails = getGeofenceTransitionInfo(
                     triggeringGeofences);
@@ -123,15 +125,23 @@ public class LocationAlertIntentService extends IntentService {
             if(service!=null)sendMessage(triggeringGeofences.get(0).getRequestId());
 
         }
-        else {
+        else if(getTransitionString(geofenceTransition).equals("location transition")){
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
-            String transitionDetails = getGeofenceTransitionInfo(
+            Log.d(TAG, "Location Transition");
+            if (triggeringGeofences != null && triggeringGeofences.size() > 0) {
+                String transitionDetails = getGeofenceTransitionInfo(
                         triggeringGeofences);
-            String transitionType = getTransitionString(geofenceTransition);
+                String transitionType = getTransitionString(geofenceTransition);
 
-            notifyLocationAlert(transitionType, transitionDetails);
-            StepCounterService service = MapsActivity.GetStepService();
-            if(service!=null) sendMessage(triggeringGeofences.get(0).getRequestId());
+                notifyLocationAlert(transitionType, transitionDetails);
+                StepCounterService service = MapsActivity.GetStepService();
+                if (service != null) sendMessage(triggeringGeofences.get(0).getRequestId());
+            }
+            else
+            {
+                int n = (triggeringGeofences != null)? triggeringGeofences.size(): -1;
+                Log.d(TAG, "triggeringGeofences.size()="+n);
+            }
         }
     }
 

@@ -59,6 +59,7 @@ public class StepCounterService extends Service
         sensorManager.registerListener(this, accel,
                 SensorManager.SENSOR_DELAY_FASTEST, sensorHandler);
         Log.d(TAG, "start listening sensor");
+        Toast.makeText(this, "start listening sensor", Toast.LENGTH_SHORT);
         hooked = true;
     }
 
@@ -67,6 +68,7 @@ public class StepCounterService extends Service
         if (!hooked) return;
         sensorManager.unregisterListener(this);
         Log.d(TAG, "stop listening sensor");
+        Toast.makeText(this, "stop listening sensor", Toast.LENGTH_SHORT);
         hooked = false;
     }
 

@@ -54,7 +54,7 @@ public class MapsActivity
         OnMapReadyCallback {
 
     // TODO revert coodinate to fuller lab
-    private static final LatLng fullerLab = new LatLng(42.274336, -71.808951);
+    private static final LatLng fullerLab = new LatLng(42.274300, -71.810306);
     private static final LatLng gordanLibrary = new LatLng(42.274228, -71.806544);
 
     private int visit_fuller_count = 0;
@@ -68,7 +68,7 @@ public class MapsActivity
     private MapView mMapView;
     private Bundle bundle = new Bundle();
     private static final int LOC_PERM_REQ_CODE = 1;
-    private static final int GEOFENCE_RADIUS = 25;              //meters
+    private static final int GEOFENCE_RADIUS = 35;              //meters
 //    private static final int GEOFENCE_EXPIRATION = 6000;        //in milli seconds
 
     private GeofencingClient geofencingClient;
