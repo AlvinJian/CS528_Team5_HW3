@@ -20,9 +20,14 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
@@ -62,6 +67,7 @@ public class MapsActivity
     private int visit_fuller_subcount=0;
     private int visit_gordon_subcount=0;
     private String inGeofence="";
+    long start = System.currentTimeMillis();
 
     private static final String TAG = "MapsActivity";
     private static final String GEOFENCE_REQ_ID = "My Geofence";
@@ -78,6 +84,18 @@ public class MapsActivity
     private Map<String, Marker> geoFenceMarkerMap;
 
     private static final String BROADCAST_ACTION = "com.example.android.threadsample.BROADCAST";
+
+    private String TAG1 = MapsActivity.class.getSimpleName();
+    BroadcastReceiver broadcastReceiver;
+    private int prev_type = DetectedActivity.STILL;
+    private String pre_label   = "Still";
+    private String label   = "Still";
+//    String label = getString(R.string.activity_unknown);
+
+
+
+    private TextView txtActivity;
+    private ImageView imgActivity;
 
     // Our handler for received Intents. This will be called whenever an Intent
     // with an action named "custom-event-name" is broadcasted.
@@ -136,10 +154,19 @@ public class MapsActivity
         Toast.makeText(context, text, Toast.LENGTH_LONG).show();
     }
 
+
     private void setTextView(int textViewId, int count, String string) {
         TextView textView = (TextView)findViewById(textViewId);
         textView.setText(string + Integer.toString(count));
     }
+    private String million2(long start){
+        long millis = System.currentTimeMillis() - start;
+        int seconds = (int) (millis / 1000);
+        int minutes = seconds / 60;
+        seconds     = seconds % 60;
+        return minutes+" Minutes "+seconds+" Seconds.";
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -157,6 +184,96 @@ public class MapsActivity
 //        setTextView(R.id.gordon, 0);
         bindService(new Intent(this,StepCounterService.class),
                 sConnection, BIND_AUTO_CREATE);
+
+        //setContentView(R.layout.activity_main);
+
+        txtActivity = findViewById(R.id.txt_activity);
+        //txtConfidence = findViewById(R.id.txt_confidence);
+        imgActivity = findViewById(R.id.img_activity);
+        //Button btnStartTrcking = findViewById(R.id.btn_start_tracking);
+        //Button btnStopTracking = findViewById(R.id.btn_stop_tracking);
+
+//        btnStartTrcking.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                startTracking();
+//            }
+//        });
+//
+//        btnStopTracking.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                stopTracking();
+//            }
+//        });
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equals(Constants.BROADCAST_DETECTED_ACTIVITY)) {
+                    int type = intent.getIntExtra("type", -1);
+                    int confidence = intent.getIntExtra("confidence", 0);
+                    handleUserActivity(type, confidence);
+                }
+            }
+        };
+
+        startTracking();
+    }
+
+    private void handleUserActivity(int type, int confidence) {
+
+
+        String time;
+
+
+
+        Log.e(TAG1, "User activity: " + label + ", Confidence: " + confidence);
+
+        if (confidence > Constants.CONFIDENCE) {
+            switch (type) {
+
+                case DetectedActivity.RUNNING: {
+                    label = getString(R.string.activity_running);
+                    imgActivity.setImageResource(R.drawable.running);
+                    break;
+                }
+                case DetectedActivity.STILL: {
+                    label = getString(R.string.activity_still);
+                    imgActivity.setImageResource(R.drawable.stilling);
+                    break;
+                }
+
+                case DetectedActivity.WALKING: {
+                    label = getString(R.string.activity_walking);
+                    imgActivity.setImageResource(R.drawable.walking);
+                    break;
+                }
+
+            }
+            txtActivity.setText(label);
+            if(label != pre_label){
+                time = "You have " + pre_label + " for " +million2(start);
+                Toast.makeText(getApplicationContext(), time, Toast.LENGTH_SHORT).show();
+                start = System.currentTimeMillis();
+//                prev_type = type;
+                pre_label = label;
+            }
+//            if ( type !=DetectedActivity.UNKNOWN && type!=prev_type) {
+//
+//                if (!pre_label.equals(getString(R.string.activity_unknown))) {
+//                    time = "You have " + pre_label + " for " +million2(start);
+//                    Toast.makeText(getApplicationContext(), time, Toast.LENGTH_SHORT).show();
+//                    start = System.currentTimeMillis();
+//                    prev_type = type;
+//                    pre_label = label;
+//                }
+//
+//            }
+
+
+
+        }
     }
 
     @Override
@@ -189,18 +306,31 @@ public class MapsActivity
     protected void onPause() {
         super.onPause();
         mMapView.onPause();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mMapView.onResume();
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver,
+                new IntentFilter(Constants.BROADCAST_DETECTED_ACTIVITY));
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         mMapView.onStart();
+    }
+
+    private void startTracking() {
+        Intent intent = new Intent(MapsActivity.this, BackgroundDetectedActivitiesService.class);
+        startService(intent);
+    }
+
+    private void stopTracking() {
+        Intent intent = new Intent(MapsActivity.this, BackgroundDetectedActivitiesService.class);
+        stopService(intent);
     }
 
     /**
