@@ -58,8 +58,8 @@ public class MapsActivity
         implements
         OnMapReadyCallback {
 
-    // TODO revert coodinate to fuller lab
-    private static final LatLng fullerLab = new LatLng(42.267626, -71.805755);
+    
+    private static final LatLng fullerLab = new LatLng(42.275156, -71.806478);
     private static final LatLng gordanLibrary = new LatLng(42.274228, -71.806544);
 
     private int visit_fuller_count = 0;
