@@ -58,7 +58,7 @@ public class MapsActivity
         implements
         OnMapReadyCallback {
 
-    
+
     private static final LatLng fullerLab = new LatLng(42.275156, -71.806478);
     private static final LatLng gordanLibrary = new LatLng(42.274228, -71.806544);
 
@@ -365,7 +365,11 @@ public class MapsActivity
 //        });
 
         showCurrentLocationOnMap();
-        startGeofence();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED)
+        {
+            startGeofence();
+        }
         getLastKnownLocation();
     }
 
@@ -547,6 +551,17 @@ public class MapsActivity
             if (geoFenceMarkerMap.get(location) == null) {
                 geoFenceMarkerMap.put(location, mMap.addMarker(markerOptions));
             }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+        {
+            showCurrentLocationOnMap();
+            startGeofence();
+            getLastKnownLocation();
         }
     }
 

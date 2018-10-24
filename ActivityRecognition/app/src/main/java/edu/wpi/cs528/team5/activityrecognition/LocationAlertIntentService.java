@@ -114,6 +114,15 @@ public class LocationAlertIntentService extends IntentService {
         {
             StepCounterService service = MapsActivity.GetStepService();
             if (service != null) {
+                List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
+
+                String transitionDetails = getGeofenceTransitionInfo(
+                        triggeringGeofences);
+
+                String transitionType = getTransitionString(geofenceTransition);
+
+                notifyLocationAlert(transitionType, transitionDetails);
+
                 service.stopListening();
                 service.resetStep();
                 sendMessage("exitservice");
